@@ -518,43 +518,127 @@ footer{
     </div>
   </section>
 
-  <!-- Insights feature -->
+  <!-- Courtside Scoreboard feature -->
   <section class="section tight">
-    <div class="wrap feature-grid flip">
+    <div class="wrap feature-grid">
       <div class="copy reveal">
-        <p class="eyebrow grad-blue">Insights</p>
-        <h2 class="headline-m">Know your game like a pro knows theirs.</h2>
-        <p>Every match feeds your history automatically. Review win rates by sport, spot momentum swings, track your longest matches and biggest comebacks, and find out who your real rival is.</p>
+        <p class="eyebrow" style="color:var(--amber)">Courtside Scoreboard</p>
+        <h2 class="headline-m">Turn your iPhone into a live scoreboard.</h2>
+        <p>Prop your phone up at the net. Score from your Apple Watch. The iPhone displays the live score in large, courtside-readable digits whilst optionally speaking each score aloud through any connected audio system—including Bluetooth speakers.</p>
         <ul class="feature-list">
-          <li>Match history and performance insights</li>
-          <li>Match momentum charts</li>
-          <li>Personal records and head-to-head rivalries</li>
-          <li>Manual match entry for games played off-watch</li>
+          <li>Live scoreboard controlled from Apple Watch</li>
+          <li>Large, readable digits visible from anywhere on court</li>
+          <li>Optional audio callout for each score</li>
+          <li>Works with any Bluetooth speaker or connected audio</li>
         </ul>
       </div>
       <div class="reveal">
-        <div class="insight-card" role="img" aria-label="Insights screen showing performance overview and records">
-          <h4>Performance overview</h4>
-          <div class="donut-row">
-            <div class="donut"></div>
-            <div class="donut-stats">
-              <div class="lbl">Games played</div>
-              <div class="big">62</div>
-              <div class="wld"><span class="w">W 13</span><span class="l">L 22</span><span class="d">D 2</span></div>
+        <div class="insight-card" style="background:linear-gradient(180deg,#1a1f2e,#0f1419);border-color:rgba(255,214,10,.2)" role="img" aria-label="iPhone displaying live scoreboard with score 30-0">
+          <h4 style="color:var(--amber);margin-bottom:24px;font-size:16px">Padel · Live from Watch</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+            <div style="background:linear-gradient(135deg,#0A84FF,#2492FF);border-radius:24px;border:2px solid rgba(10,132,255,.4);padding:28px;text-align:center">
+              <div style="font-size:64px;font-weight:800;color:#fff;line-height:1">30</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:8px;text-transform:uppercase;letter-spacing:.1em">You</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#5AC8FA,#7DD3FC);border-radius:24px;border:2px solid rgba(90,200,250,.3);padding:28px;text-align:center">
+              <div style="font-size:64px;font-weight:800;color:#fff;line-height:1">0</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:8px;text-transform:uppercase;letter-spacing:.1em">Them</div>
             </div>
           </div>
-          <div class="records">
-            <div class="rec"><span class="k">Longest match</span><span class="v">87:32 · Padel</span></div>
-            <div class="rec"><span class="k">Most calories burned</span><span class="v">916 kcal · Padel</span></div>
-            <div class="rec"><span class="k">Biggest comeback</span><span class="v">Down 11 · Padel</span></div>
-            <div class="rec"><span class="k">Fastest win</span><span class="v" style="color:var(--pink)">04:16 · Badminton</span></div>
-          </div>
+          <div style="text-align:center;font-size:13px;color:var(--muted);border-top:1px solid rgba(255,255,255,.1);padding-top:12px">Sets 1-0  Games 0-0</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Group play teaser -->
+  <!-- Performance Tracking feature -->
+  <section class="section tight">
+    <div class="wrap feature-grid flip">
+      <div class="copy reveal">
+        <p class="eyebrow grad-green">Performance Tracking</p>
+        <h2 class="headline-m">Deep match insights after every game.</h2>
+        <p>After each match, review your performance in detail. See the point-by-point timeline, track momentum swings with live graphs, and discover key moments like your longest run, fastest set, and biggest comebacks.</p>
+        <ul class="feature-list green">
+          <li>Point-by-point timeline of every game</li>
+          <li>Live performance trend graph showing momentum</li>
+          <li>Match duration and calories burned</li>
+          <li>Match insights: longest run, closest set, momentum swings</li>
+          <li>Set overviews with detailed scoring</li>
+        </ul>
+      </div>
+      <div class="reveal">
+        <div class="insight-card" role="img" aria-label="Performance tracking showing trend graph and match insights">
+          <h4 style="margin-bottom:16px">Match Details</h4>
+          <div style="background:var(--bg-raise);border-radius:14px;padding:14px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px">
+              <span style="color:var(--muted)">Duration</span>
+              <span style="color:var(--amber);font-weight:700;font-size:14px">60:13</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
+              <span style="color:var(--muted)">Calories</span>
+              <span style="color:var(--pink);font-weight:700;font-size:14px">752 kcal</span>
+            </div>
+          </div>
+          <div style="background:var(--bg-raise);border-radius:14px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--faint)">
+            <div style="margin-bottom:6px">📊 Performance Trend</div>
+            <div style="width:100%;height:60px;background:rgba(48,209,88,.1);border-radius:8px;margin-bottom:6px;position:relative;overflow:hidden">
+              <svg style="width:100%;height:100%;" viewBox="0 0 200 60" preserveAspectRatio="none">
+                <path d="M0 50 Q 25 45 50 40 T 100 35 T 150 25 T 200 15" stroke="var(--green)" stroke-width="2" fill="none"/>
+                <path d="M0 50 Q 25 48 50 45 T 100 48 T 150 42 T 200 38" stroke="var(--pink)" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:space-between;font-size:11px">
+              <span><span style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:2px;vertical-align:middle"></span> Your lead</span>
+              <span><span style="display:inline-block;width:8px;height:8px;background:var(--pink);border-radius:2px;vertical-align:middle"></span> Opponent</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--blue);padding:8px;background:rgba(10,132,255,.1);border-radius:8px;text-align:center">134 pts · Tap to view point timeline</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social Sharing feature -->
+  <section class="section tight">
+    <div class="wrap feature-grid">
+      <div class="copy reveal">
+        <p class="eyebrow" style="color:var(--pink)">Social Sharing</p>
+        <h2 class="headline-m">Boast about your wins. Everywhere.</h2>
+        <p>After every match, share your victory like pros share their Strava runs. Customise the match card with or without player names and insights, add a photo background from court, then share directly to Instagram Stories, Reels, Posts, WhatsApp, or any app on your phone.</p>
+        <ul class="feature-list pink">
+          <li>Customisable match result cards</li>
+          <li>Show or hide player names and match insights</li>
+          <li>Add photos from your match as background</li>
+          <li>Share to Instagram Stories, Reels, Posts</li>
+          <li>Works with WhatsApp and any messaging app</li>
+        </ul>
+      </div>
+      <div class="reveal">
+        <div style="background:linear-gradient(135deg,rgba(255,45,120,.08),rgba(255,45,120,.03));border:1px solid rgba(255,45,120,.3);border-radius:24px;padding:28px;backdrop-filter:blur(8px)" role="img" aria-label="Match sharing options showing Instagram Stories, Reels, Posts, and Messages">
+          <h3 style="color:var(--pink);margin-bottom:24px;font-size:18px;font-weight:600">Share your match</h3>
+          <div style="background:var(--bg-raise);border-radius:16px;padding:20px;margin-bottom:24px;text-align:center">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:8px">TallyUps</div>
+            <div style="font-weight:700;font-size:32px;letter-spacing:-1px;margin-bottom:8px">PADEL</div>
+            <div style="font-size:12px;color:var(--faint);margin-bottom:16px">2 Jun 2026 at 21:43</div>
+            <div style="font-size:28px;font-weight:700;line-height:1.4">
+              <div style="color:var(--blue)">7-6</div>
+              <div style="color:var(--pink)">6-2</div>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:center;font-size:13px">
+              <div style="background:var(--card);border-radius:10px;padding:8px 14px;color:var(--amber);font-weight:600">60:13</div>
+              <div style="background:var(--card);border-radius:10px;padding:8px 14px;color:var(--pink);font-weight:600">752 kcal</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <button style="background:rgba(10,132,255,.2);color:var(--blue);border-radius:14px;padding:16px;font-weight:600;border:1px solid rgba(10,132,255,.3);cursor:pointer;font-size:16px">📱 Story</button>
+            <button style="background:rgba(255,45,120,.2);color:var(--pink);border-radius:14px;padding:16px;font-weight:600;border:1px solid rgba(255,45,120,.3);cursor:pointer;font-size:16px">📹 Reel</button>
+            <button style="background:rgba(139,0,60,.2);color:var(--pink);border-radius:14px;padding:16px;font-weight:600;border:1px solid rgba(139,0,60,.3);cursor:pointer;font-size:16px">📮 Post</button>
+            <button style="background:rgba(48,209,88,.15);color:var(--green);border-radius:14px;padding:16px;font-weight:600;border:1px solid rgba(48,209,88,.3);cursor:pointer;font-size:16px">💬 Message</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
   <section class="section tight">
     <div class="wrap feature-grid">
       <div class="copy reveal">
@@ -568,9 +652,9 @@ footer{
       <div class="reveal">
         <div class="insight-card" aria-hidden="true">
           <h4 style="color:var(--amber)">Round 2 of 5</h4>
-          <div class="match-card"><span class="side winner">Umar + Farhan</span><span class="vs"><em>2 — 0</em></span><span class="side right loser">Shamir + Aamir</span></div>
-          <div class="match-card"><span class="side loser">Jess + Gavin</span><span class="vs"><em>1 — 2</em></span><span class="side right winner">Deniece + Mo</span></div>
-          <div class="sitout">Sitting out: Alex</div>
+          <div class="match-card"><span class="side winner">Rice + Saka</span><span class="vs"><em>2 — 0</em></span><span class="side right loser">Gabriel + Saliba</span></div>
+          <div class="match-card"><span class="side loser">Martinelli + Havertz</span><span class="vs"><em>1 — 2</em></span><span class="side right winner">Gyokeres + Eze</span></div>
+          <div class="sitout">Sitting out: Zubi</div>
         </div>
       </div>
     </div>
