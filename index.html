@@ -744,10 +744,19 @@ footer{
     <div class="panel">
       <h3>2. Format</h3>
       <div class="seg" role="group" aria-label="Match format">
-        <button id="fmt-singles" aria-pressed="true">Singles round robin</button>
-        <button id="fmt-doubles" aria-pressed="false">Doubles · rotating partners</button>
+        <button id="fmt-singles" aria-pressed="true">Singles</button>
+        <button id="fmt-doubles" aria-pressed="false">Doubles</button>
       </div>
       <p class="hint" id="fmt-hint">Everyone plays everyone once. Odd numbers get a fair rotation of byes.</p>
+    </div>
+
+    <div class="panel">
+      <h3>3. Play Style</h3>
+      <div class="seg" role="group" aria-label="Play style">
+        <button id="style-round-robin" aria-pressed="true">Round robin</button>
+        <button id="style-winners-stay" aria-pressed="false">Winners stay on</button>
+      </div>
+      <p class="hint" id="style-hint">Round robin: everyone plays everyone. Winners stay on: continuous play with rotating losers.</p>
       <div class="tool-actions">
         <button class="btn" id="generate">Generate fixtures</button>
         <button class="btn danger" id="reset" hidden>Start over</button>
@@ -872,23 +881,20 @@ footer{
   }, { threshold: .15 });
   document.querySelectorAll(".reveal").forEach(el => io.observe(el));
 
-  /* ---------- Group Play state ---------- */
-  const KEY = "tallyups-groupplay-v1";
-  let state = load() || { players: [], format: "singles", rounds: null, scores: {} };
+  /* ---------- Group Play state (Round Robin + Winners Stay On) ---------- */
+  const KEY = "tallyups-groupplay-v2";
+  let state = load() || { players: [], format: "singles", style: "round-robin", rounds: null, scores: {}, wso: { bench: [], current: null, streak: 0 } };
 
-  function load(){
-    try { return JSON.parse(localStorage.getItem(KEY)); } catch(e){ return null; }
-  }
-  function save(){
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
-  }
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY)); } catch(e){ return null; } }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
 
   const nameInput = document.getElementById("player-name");
   const chipsEl = document.getElementById("player-chips");
   const hintEl = document.getElementById("player-hint");
-  const fmtHint = document.getElementById("fmt-hint");
   const fmtSingles = document.getElementById("fmt-singles");
   const fmtDoubles = document.getElementById("fmt-doubles");
+  const styleRR = document.getElementById("style-round-robin");
+  const styleWSO = document.getElementById("style-winners-stay");
   const genBtn = document.getElementById("generate");
   const resetBtn = document.getElementById("reset");
   const fixturesArea = document.getElementById("fixtures-area");
@@ -901,28 +907,30 @@ footer{
   function addPlayer(){
     const name = nameInput.value.trim().slice(0,24);
     if (!name) return;
-    if (state.players.some(p => p.toLowerCase() === name.toLowerCase())){
-      hintEl.textContent = `"${name}" is already on the list.`;
-      return;
-    }
-    if (state.players.length >= 16){
-      hintEl.textContent = "Maximum of 16 players.";
-      return;
-    }
+    if (state.players.some(p => p.toLowerCase() === name.toLowerCase())){ hintEl.textContent = `"${name}" already added.`; return; }
+    if (state.players.length >= 16){ hintEl.textContent = "Max 16 players."; return; }
     state.players.push(name);
     nameInput.value = "";
     nameInput.focus();
-    if (state.rounds){ state.rounds = null; state.scores = {}; }
-    save(); renderPlayers(); renderFixtures();
+    state.rounds = null;
+    state.scores = {};
+    save();
+    renderPlayers();
+    renderFixtures();
   }
+
   function removePlayer(i){
     state.players.splice(i,1);
-    if (state.rounds){ state.rounds = null; state.scores = {}; }
-    save(); renderPlayers(); renderFixtures();
+    state.rounds = null;
+    state.scores = {};
+    save();
+    renderPlayers();
+    renderFixtures();
   }
+
   function renderPlayers(){
     chipsEl.innerHTML = state.players.map((p,i) =>
-      `<span class="pchip">${esc(p)}<button aria-label="Remove ${esc(p)}" data-remove="${i}">✕</button></span>`
+      `<span class="pchip">${esc(p)}<button aria-label="Remove" data-remove="${i}">✕</button></span>`
     ).join("");
     const min = state.format === "doubles" ? 4 : 3;
     hintEl.textContent = state.players.length < min
@@ -930,37 +938,53 @@ footer{
       : `${state.players.length} players added.`;
     genBtn.disabled = state.players.length < min;
   }
+
   chipsEl.addEventListener("click", e => {
     const b = e.target.closest("[data-remove]");
     if (b) removePlayer(Number(b.dataset.remove));
   });
+
   document.getElementById("add-player").addEventListener("click", addPlayer);
   nameInput.addEventListener("keydown", e => { if (e.key === "Enter") addPlayer(); });
 
-  /* ---------- Format ---------- */
+  /* ---------- Format & Style ---------- */
   function setFormat(f){
     state.format = f;
     fmtSingles.setAttribute("aria-pressed", f === "singles");
     fmtDoubles.setAttribute("aria-pressed", f === "doubles");
-    fmtHint.textContent = f === "singles"
-      ? "Everyone plays everyone once. Odd numbers get a fair rotation of byes."
-      : "Partners rotate each round so everyone plays with and against different people. Needs an even number of players; spares sit out in turn.";
-    if (state.rounds){ state.rounds = null; state.scores = {}; }
-    save(); renderPlayers(); renderFixtures();
+    state.rounds = null;
+    state.scores = {};
+    save();
+    renderPlayers();
+    renderFixtures();
   }
+
+  function setStyle(s){
+    state.style = s;
+    styleRR.setAttribute("aria-pressed", s === "round-robin");
+    styleWSO.setAttribute("aria-pressed", s === "winners-stay");
+    state.rounds = null;
+    state.scores = {};
+    state.wso = { bench: [], current: null, streak: 0 };
+    save();
+    renderFixtures();
+  }
+
   fmtSingles.addEventListener("click", () => setFormat("singles"));
   fmtDoubles.addEventListener("click", () => setFormat("doubles"));
+  styleRR.addEventListener("click", () => setStyle("round-robin"));
+  styleWSO.addEventListener("click", () => setStyle("winners-stay"));
 
   /* ---------- Fixture generation (circle method) ---------- */
   function circleRounds(items){
     const arr = items.slice();
-    if (arr.length % 2) arr.push(null); // bye
+    if (arr.length % 2) arr.push(null);
     const n = arr.length, rounds = [];
     for (let r = 0; r < n - 1; r++){
       const pairs = [];
       for (let i = 0; i < n/2; i++) pairs.push([arr[i], arr[n-1-i]]);
       rounds.push(pairs);
-      arr.splice(1, 0, arr.pop()); // rotate all but first
+      arr.splice(1, 0, arr.pop());
     }
     return rounds;
   }
@@ -968,143 +992,205 @@ footer{
   function generate(){
     const players = state.players.map((_,i) => i);
     let rounds = [];
-    if (state.format === "singles"){
-      rounds = circleRounds(players).map(pairs => {
-        const matches = [], byes = [];
-        pairs.forEach(([a,b]) => {
-          if (a === null || b === null) byes.push(a === null ? b : a);
-          else matches.push({ a:[a], b:[b] });
+
+    if (state.style === "round-robin"){
+      if (state.format === "singles"){
+        rounds = circleRounds(players).map(pairs => {
+          const matches = [], byes = [];
+          pairs.forEach(([a,b]) => {
+            if (a === null || b === null) byes.push(a === null ? b : a);
+            else matches.push({ a:[a], b:[b] });
+          });
+          return { matches, byes };
         });
-        return { matches, byes };
+      } else {
+        const pairingRounds = circleRounds(players);
+        rounds = pairingRounds.map(pairs => {
+          const matches = [];
+          for (let i = 0; i < pairs.length - 1; i += 2){
+            const [a1, a2] = pairs[i], [b1, b2] = pairs[i+1];
+            if (a1 !== null && a2 !== null && b1 !== null && b2 !== null){
+              matches.push({ a: [a1, a2], b: [b1, b2] });
+            }
+          }
+          return { matches, byes: [] };
+        });
+      }
+      state.rounds = rounds;
+      state.scores = {};
+      state.rounds.forEach((r, ri) => {
+        r.matches.forEach((m, mi) => {
+          const k = `${ri}-${mi}`;
+          state.scores[k] = { a:0, b:0, done:false };
+        });
       });
     } else {
-      // Doubles, rotating partners: pair players via circle method, then pit consecutive pairs against each other.
-      // When a pair must sit out, choose the pair whose members have rested least so far.
-      const sitCount = {};
-      players.forEach(p => sitCount[p] = 0);
-      const pairRounds = circleRounds(players.slice());
-      rounds = pairRounds.map(pairs => {
-        let clean = pairs.filter(p => p[0] !== null && p[1] !== null);
-        const byes = pairs.filter(p => p[0] === null || p[1] === null)
-                          .map(p => p[0] === null ? p[1] : p[0]);
-        if (clean.length % 2){
-          let best = 0, bestScore = Infinity;
-          clean.forEach((p,i) => {
-            const s = sitCount[p[0]] + sitCount[p[1]];
-            if (s < bestScore){ bestScore = s; best = i; }
-          });
-          byes.push(...clean[best]);
-          clean = clean.filter((_,i) => i !== best);
-        }
-        byes.forEach(b => sitCount[b]++);
-        const matches = [];
-        for (let i = 0; i + 1 < clean.length; i += 2){
-          matches.push({ a: clean[i], b: clean[i+1] });
-        }
-        return { matches, byes };
-      }).filter(r => r.matches.length);
+      state.wso.bench = players.slice();
+      state.wso.current = null;
+      state.wso.streak = 0;
+      state.rounds = [];
+      state.scores = {};
+      nextWSO();
     }
-    state.rounds = rounds;
-    state.scores = {};
-    save(); renderFixtures();
+
+    save();
+    renderFixtures();
   }
+
+  function nextWSO(){
+    const teamSize = state.format === "doubles" ? 2 : 1;
+    if (state.wso.bench.length < teamSize * 2){
+      state.wso.bench = state.players.map((_,i) => i).filter(i => 
+        !(state.wso.current && (state.wso.current.a.includes(i) || state.wso.current.b.includes(i)))
+      );
+    }
+    if (state.wso.bench.length < teamSize * 2) return;
+    const a = state.wso.bench.splice(0, teamSize).map(i => i);
+    const b = state.wso.bench.splice(0, teamSize).map(i => i);
+    state.wso.current = { a, b, scoreA: 0, scoreB: 0 };
+    save();
+  }
+
   genBtn.addEventListener("click", generate);
 
-  resetBtn.addEventListener("click", () => {
-    if (!confirm("Clear all players, fixtures and scores?")) return;
-    state = { players: [], format: "singles", rounds: null, scores: {} };
-    save();
-    setFormat("singles");
-  });
-
-  /* ---------- Rendering fixtures + scores ---------- */
-  function names(idxs){ return idxs.map(i => esc(state.players[i])).join(" + "); }
-
+  /* ---------- Fixture rendering & scoring ---------- */
   function renderFixtures(){
-    resetBtn.hidden = !state.rounds && state.players.length === 0;
-    if (!state.rounds){
-      fixturesArea.innerHTML = state.players.length
-        ? `<div class="panel"><h3>3. Fixtures</h3><div class="empty-state">Press "Generate fixtures" to build the schedule.</div></div>`
-        : "";
-      standingsPanel.hidden = true;
+    if (!state.rounds && state.style === "round-robin"){
+      fixturesArea.innerHTML = "";
+      resetBtn.hidden = true;
       return;
     }
-    let html = `<div class="panel"><h3>3. Fixtures &amp; scores</h3>`;
-    state.rounds.forEach((round, r) => {
-      html += `<div class="round-label">Round ${r+1}</div>`;
-      round.matches.forEach((m, i) => {
-        const id = `${r}-${i}`;
-        const sc = state.scores[id] || ["",""];
-        const done = sc[0] !== "" && sc[1] !== "";
-        const aWin = done && Number(sc[0]) > Number(sc[1]);
-        const bWin = done && Number(sc[1]) > Number(sc[0]);
-        html += `<div class="match-card">
-          <span class="side ${aWin?"winner":bWin?"loser":""}">${names(m.a)}</span>
-          <span class="vs">
-            <input class="score-in" type="number" min="0" max="99" inputmode="numeric" value="${sc[0]}" data-score="${id}" data-side="0" aria-label="Score for ${names(m.a)}">
-            <em>vs</em>
-            <input class="score-in" type="number" min="0" max="99" inputmode="numeric" value="${sc[1]}" data-score="${id}" data-side="1" aria-label="Score for ${names(m.b)}">
-          </span>
-          <span class="side right ${bWin?"winner":aWin?"loser":""}">${names(m.b)}</span>
-        </div>`;
+
+    resetBtn.hidden = false;
+
+    if (state.style === "round-robin"){
+      let html = "";
+      state.rounds.forEach((round, ri) => {
+        html += `<div class="panel"><h3>Round ${ri + 1}</h3>`;
+        round.matches.forEach((match, mi) => {
+          const k = `${ri}-${mi}`, score = state.scores[k] || { a:0, b:0, done:false };
+          const aNames = match.a.map(i => state.players[i]).join(" & ");
+          const bNames = match.b.map(i => state.players[i]).join(" & ");
+          html += `<div style="margin-bottom:12px;padding:12px;background:var(--bg-raise);border-radius:12px"><div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:8px"><span style="text-align:right;overflow:hidden;text-overflow:ellipsis">${esc(aNames)}</span><span style="font-weight:700;font-size:18px;min-width:40px;text-align:center">${score.a}–${score.b}</span><span style="overflow:hidden;text-overflow:ellipsis">${esc(bNames)}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn" data-match="${k}" data-winner="a" ${score.done ? "disabled" : ""}>A wins</button><button class="btn" data-match="${k}" data-winner="b" ${score.done ? "disabled" : ""}>B wins</button></div>${!score.done ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><input type="number" data-match="${k}" data-score="a" value="${score.a}" min="0" max="99" style="width:100%;background:var(--card);border:1px solid var(--card-edge);border-radius:8px;padding:8px;color:var(--text);font-size:14px"><input type="number" data-match="${k}" data-score="b" value="${score.b}" min="0" max="99" style="width:100%;background:var(--card);border:1px solid var(--card-edge);border-radius:8px;padding:8px;color:var(--text);font-size:14px"></div>` : `<p style="font-size:12px;color:var(--muted);margin-top:6px">✓ Scored</p>`}</div>`;
+        });
+        if (round.byes.length > 0) html += `<p style="font-size:13px;color:var(--muted)">Bye: ${round.byes.map(i => state.players[i]).join(", ")}</p>`;
+        html += "</div>";
       });
-      if (round.byes.length){
-        html += `<div class="sitout">Sitting out: ${round.byes.map(i => esc(state.players[i])).join(", ")}</div>`;
-      }
-    });
-    html += `</div>`;
-    fixturesArea.innerHTML = html;
-    renderStandings();
+      fixturesArea.innerHTML = html;
+
+      fixturesArea.querySelectorAll("button[data-match]").forEach(b => {
+        b.addEventListener("click", () => {
+          const k = b.dataset.match, winner = b.dataset.winner;
+          const scoreA = Number(fixturesArea.querySelector(`input[data-match="${k}"][data-score="a"]`)?.value) || 0;
+          const scoreB = Number(fixturesArea.querySelector(`input[data-match="${k}"][data-score="b"]`)?.value) || 0;
+          state.scores[k] = { a: scoreA, b: scoreB, done: true, winner };
+          save();
+          renderFixtures();
+          updateStandings();
+        });
+      });
+
+      fixturesArea.querySelectorAll("input[type=number]").forEach(inp => {
+        inp.addEventListener("change", () => {
+          const k = inp.dataset.match;
+          const scoreA = Number(fixturesArea.querySelector(`input[data-match="${k}"][data-score="a"]`)?.value) || 0;
+          const scoreB = Number(fixturesArea.querySelector(`input[data-match="${k}"][data-score="b"]`)?.value) || 0;
+          state.scores[k] = { ...state.scores[k], a: scoreA, b: scoreB };
+          save();
+          updateStandings();
+        });
+      });
+    } else {
+      if (!state.wso.current) return;
+      const { a, b, scoreA, scoreB } = state.wso.current;
+      const aNames = a.map(i => state.players[i]).join(" & ");
+      const bNames = b.map(i => state.players[i]).join(" & ");
+      const nextNames = state.wso.bench.slice(0, state.format === "doubles" ? 2 : 1).map(i => state.players[i]).join(" & ");
+
+      let html = `<div class="panel"><h3>Current match</h3><div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:16px"><span style="text-align:right">${esc(aNames)}</span><span style="font-weight:700;font-size:24px;min-width:50px;text-align:center">${scoreA}–${scoreB}</span><span>${esc(bNames)}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"><input type="number" id="wso-score-a" value="${scoreA}" min="0" max="99" style="width:100%;background:var(--card);border:1px solid var(--card-edge);border-radius:8px;padding:8px;color:var(--text);font-size:14px"><input type="number" id="wso-score-b" value="${scoreB}" min="0" max="99" style="width:100%;background:var(--card);border:1px solid var(--card-edge);border-radius:8px;padding:8px;color:var(--text);font-size:14px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn" id="wso-a-wins">A wins</button><button class="btn" id="wso-b-wins">B wins</button></div></div><div class="panel"><h3>Next on</h3><p style="font-size:15px">${esc(nextNames || "—")}</p></div>`;
+
+      fixturesArea.innerHTML = html;
+
+      document.getElementById("wso-score-a").addEventListener("change", (e) => {
+        state.wso.current.scoreA = Number(e.target.value) || 0;
+        save();
+      });
+      document.getElementById("wso-score-b").addEventListener("change", (e) => {
+        state.wso.current.scoreB = Number(e.target.value) || 0;
+        save();
+      });
+
+      document.getElementById("wso-a-wins").addEventListener("click", () => scoreWSO("a"));
+      document.getElementById("wso-b-wins").addEventListener("click", () => scoreWSO("b"));
+    }
   }
 
-  fixturesArea.addEventListener("input", e => {
-    const inp = e.target.closest("[data-score]");
-    if (!inp) return;
-    const id = inp.dataset.score, side = Number(inp.dataset.side);
-    const sc = state.scores[id] || ["",""];
-    sc[side] = inp.value === "" ? "" : String(Math.max(0, Math.min(99, Number(inp.value))));
-    state.scores[id] = sc;
-    save();
-    // Update winner styling + standings without re-rendering inputs (keeps focus)
-    const card = inp.closest(".match-card");
-    const [s0, s1] = state.scores[id];
-    const done = s0 !== "" && s1 !== "";
-    const sides = card.querySelectorAll(".side");
-    sides[0].classList.toggle("winner", done && +s0 > +s1);
-    sides[0].classList.toggle("loser",  done && +s0 < +s1);
-    sides[1].classList.toggle("winner", done && +s1 > +s0);
-    sides[1].classList.toggle("loser",  done && +s1 < +s0);
-    renderStandings();
-  });
+  function scoreWSO(winner){
+    const { a, b, scoreA, scoreB } = state.wso.current;
+    const loseTeam = winner === "a" ? b : a;
+    state.wso.streak = winner === "a" ? (state.wso.streak + 1) : 0;
 
-  function renderStandings(){
-    if (!state.rounds){ standingsPanel.hidden = true; return; }
-    const stats = state.players.map((p,i) => ({ i, name: p, played:0, w:0, l:0, d:0, diff:0, pts:0 }));
-    state.rounds.forEach((round, r) => {
-      round.matches.forEach((m, mi) => {
-        const sc = state.scores[`${r}-${mi}`];
-        if (!sc || sc[0] === "" || sc[1] === "") return;
-        const a = +sc[0], b = +sc[1];
-        m.a.forEach(i => { stats[i].played++; stats[i].diff += a - b; });
-        m.b.forEach(i => { stats[i].played++; stats[i].diff += b - a; });
-        if (a > b){ m.a.forEach(i => { stats[i].w++; stats[i].pts += 3; }); m.b.forEach(i => stats[i].l++); }
-        else if (b > a){ m.b.forEach(i => { stats[i].w++; stats[i].pts += 3; }); m.a.forEach(i => stats[i].l++); }
-        else { m.a.concat(m.b).forEach(i => { stats[i].d++; stats[i].pts += 1; }); }
+    if (state.wso.streak >= 3){
+      state.wso.bench.push(...(winner === "a" ? a : b));
+      state.wso.streak = 0;
+    }
+
+    state.wso.bench.push(...loseTeam);
+
+    if (state.format === "singles"){
+      const stats = getStats();
+      stats[state.players[a[0]]].w++;
+      stats[state.players[b[0]]].l++;
+    } else {
+      const stats = getStats();
+      a.forEach(i => stats[state.players[i]].w++);
+      b.forEach(i => stats[state.players[i]].l++);
+    }
+
+    save();
+    nextWSO();
+    updateStandings();
+    renderFixtures();
+  }
+
+  function getStats(){
+    const stats = {};
+    state.players.forEach(p => stats[p] = { p:0, w:0, l:0, d:0, diff:0, pts:0 });
+    
+    if (state.style === "round-robin"){
+      Object.entries(state.scores).forEach(([k, score]) => {
+        if (!score.done) return;
+        const [ri, mi] = k.split("-").map(Number);
+        const match = state.rounds[ri].matches[mi];
+        const aNames = match.a.map(i => state.players[i]);
+        const bNames = match.b.map(i => state.players[i]);
+        aNames.forEach(p => stats[p].p++);
+        bNames.forEach(p => stats[p].p++);
+        if (score.winner === "a"){
+          aNames.forEach(p => { stats[p].w++; stats[p].pts += 3; stats[p].diff += (score.a - score.b); });
+          bNames.forEach(p => { stats[p].l++; stats[p].diff -= (score.a - score.b); });
+        } else {
+          bNames.forEach(p => { stats[p].w++; stats[p].pts += 3; stats[p].diff += (score.b - score.a); });
+          aNames.forEach(p => { stats[p].l++; stats[p].diff -= (score.b - score.a); });
+        }
       });
-    });
-    stats.sort((x,y) => y.pts - x.pts || y.diff - x.diff || y.w - x.w || x.name.localeCompare(y.name));
-    standingsBody.innerHTML = stats.map((s, rank) =>
-      `<tr class="${rank === 0 && s.pts > 0 ? "leader" : ""}">
-        <td class="rank">${rank+1}</td><td>${esc(s.name)}</td>
-        <td class="num">${s.played}</td><td class="num">${s.w}</td><td class="num">${s.l}</td><td class="num">${s.d}</td>
-        <td class="num">${s.diff > 0 ? "+"+s.diff : s.diff}</td><td class="num pts">${s.pts}</td>
-      </tr>`
+    }
+
+    return stats;
+  }
+
+  function updateStandings(){
+    const stats = getStats();
+    const sorted = Object.entries(stats).map(([name, s]) => ({ name, ...s })).sort((a, b) => b.pts - a.pts || b.w - a.w || a.name.localeCompare(b.name));
+    standingsBody.innerHTML = sorted.map((s, i) =>
+      `<tr><td class="rank">${i + 1}</td><td>${esc(s.name)}</td><td class="num">${s.p}</td><td class="num">${s.w}</td><td class="num">${s.l}</td><td class="num">${s.d}</td><td class="num">${s.diff > 0 ? "+"+s.diff : s.diff}</td><td class="num pts">${s.pts}</td></tr>`
     ).join("");
     standingsPanel.hidden = false;
   }
 
   /* ---------- Restore on load ---------- */
   setFormat(state.format || "singles");
+  setStyle(state.style || "round-robin");
 
   /* ---------- Support form ---------- */
   const supportTypeSelector = document.getElementById("support-type-selector");
